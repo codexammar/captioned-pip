@@ -1,79 +1,73 @@
-Captioned PiP
+# Captioned PiP (Archived)
 
-Captioned PiP is a lightweight Firefox extension that enables subtitles and captions to appear inside Picture-in-Picture (PiP) mode — even on websites like anime streaming sites, where captions are usually HTML overlays that are otherwise invisible in standard PiP.
-Features
+**Status:** Archived  
+**Reason:** Browser security restrictions limit access to embedded video streams and subtitles on most streaming sites (e.g., anime websites).
 
-    🖥️ Capture both the video and dynamic subtitles into a single Picture-in-Picture window
+---
 
-    🔄 Automatically tracks subtitle changes using a MutationObserver
+## 🧠 Overview
 
-    🎬 Simple one-click activation — no need for automatic site detection
+**Captioned PiP** was an experimental Firefox extension designed to bring website captions into Picture-in-Picture (PiP) mode.
 
-    ⚡ Lightweight and runs efficiently alongside your videos
+The goal was to allow users to watch videos from sites like anime streaming platforms, with their subtitles visible inside the PiP window — overcoming limitations of native browser PiP, which only shows the video and not overlaid captions.
 
-    🎨 Future improvements planned for customizable caption styles
+---
 
-Why This Extension?
+## 🚀 What Was Attempted
 
-By default, Firefox Picture-in-Picture mode only extracts the video element, ignoring any floating caption overlays (like subtitles rendered in HTML by many anime streaming sites).
-This extension fixes that by drawing both the video and the live captions onto a canvas, and sending the canvas into Picture-in-Picture.
+- **Detect** `<video>` elements dynamically on web pages.
+- **Capture** both the video and visible subtitles into a custom `<canvas>`.
+- **Send** the canvas into Picture-in-Picture mode for an enhanced experience.
+- **Handle** fullscreen events to attempt grabbing iframe-embedded videos.
+- **Explore** blob URLs, CORS restrictions, and iframe security behaviors.
+- **Test** prompting users for direct video links as a fallback method.
 
-This allows you to watch anime (or other videos) in PiP mode without missing any dialogue.
-How It Works
+---
 
-    When you click the extension button, it detects the video and subtitle elements on the page.
+## ❗ Why It Was Archived
 
-    It creates an off-screen <canvas>.
+After a deep technical investigation, it became clear:
 
-    It continuously draws the video frame and current subtitles onto the canvas.
+| Challenge | Outcome |
+|:---|:---|
+| Native browser PiP windows are **sandboxed** | ❌ Cannot inject or modify PiP contents |
+| Cross-origin iframe videos are protected by **CORS** | ❌ Cannot access videos embedded from other domains |
+| Blob URLs (`blob:https://...`) are **temporary and session-specific** | ❌ Cannot reuse blob URLs outside their original page |
+| Users on anime sites cannot obtain real `.mp4` links easily | ❌ Asking users for usable video links is impractical |
+| Browser extensions must operate within **strict security sandboxes** | ✅ Correct and by design |
 
-    It sends the canvas into Picture-in-Picture mode instead of the raw video.
+✅  
+While general web videos hosted directly via public `.mp4` URLs could work with user-provided links,  
+the original target audience (anime streaming sites) made the practical use case extremely limited.
 
-    The captions are updated live even if the subtitles change dynamically during playback.
+---
 
-Installation (Temporary Testing)
+## 📚 Lessons Learned
 
-    Clone or download this repository.
+- **Browser extensions cannot modify native PiP behavior.**
+- **Cross-origin iframe protection (CORS) is unbreakable** by design inside extensions.
+- **Blob URLs are not real URLs** — they are memory pointers created temporarily inside the page.
+- **Screen capturing or network sniffing requires elevated permissions** that are not feasible for standard extensions.
+- **Sometimes pivoting or ending a project early after understanding the platform limitations is the right professional decision.**
 
-    Open Firefox and navigate to about:debugging#/runtime/this-firefox.
+---
 
-    Click "Load Temporary Add-on".
+## 📦 Project Outcome
 
-    Select the manifest.json file inside the project folder.
+Although this project was archived, it provided valuable insights into:
 
-    Navigate to a video website (such as hianime.to or zoro.to).
+- Browser extension security models
+- PiP implementation limits
+- Cross-origin restrictions
+- Media content protection strategies
 
-    Click the extension icon in your toolbar to activate Captioned PiP!
+✅  
+This experience strengthens future extension development and browser-based project design.
 
-File Structure
+---
 
-```
-firefox-captioned-pip/
-├── manifest.json   # Firefox extension configuration
-├── content.js      # Handles video/caption capture and canvas drawing
-├── background.js   # Handles user click and messaging
-├── icon.png        # Extension icon (48x48px)
-└── README.md       # Project documentation
-```
-Planned Improvements
+## 📋 Closing Note
 
-    Better font styling and outline effects for the subtitles
+> **Captioned PiP** remains a valuable technical case study in realistic browser capabilities and limitations.
 
-    Settings page to customize subtitle appearance (size, color, background)
-
-    Support for multiple subtitle layers (e.g., dual subtitles)
-
-    Error handling for missing videos or captions
-
-    Optimized frame rate to reduce CPU usage
-
-    Optional support for specific streaming sites for faster detection
-
-License
-
-This project is licensed under the MIT License — feel free to use, modify, and distribute it!
-Acknowledgements
-
-    Firefox Developer Tools for easy extension testing
-
-    Community feedback from anime fans and PiP users
+---

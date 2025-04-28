@@ -1,54 +1,56 @@
-// content.js
-
 let observer;
 let canvas;
 let ctx;
 let video;
 let subtitleElement;
 let pipStarted = false;
+let fullscreenListenerActive = false;
 
-async function startCaptionedPiP() {
+async function startCaptionedPiPFromVideo(selectedVideo) {
     if (pipStarted) {
         console.log('Already running Captioned PiP.');
         return;
     }
     pipStarted = true;
 
-    video = document.querySelector('video');
-    if (!video) {
-        alert('No video found on this page!');
-        return;
-    }
+    video = selectedVideo;
+    console.log('Using video element:', video);
 
-    // Find initial subtitle element
     subtitleElement = document.querySelector('.caption-container, .caption-layer, .subtitle, .vjs-text-track-display');
+
     if (!subtitleElement) {
-        alert('No subtitles found. Start playing the video first.');
+        alert('No subtitles found. Make sure subtitles are visible.');
+        pipStarted = false;
         return;
     }
 
-    // Create and set up the canvas
+    console.log('Subtitle element found:', subtitleElement);
+
+    // Create canvas
     canvas = document.createElement('canvas');
     canvas.width = video.videoWidth || 1280;
     canvas.height = video.videoHeight || 720;
-    canvas.style.display = 'none';
+    canvas.style.display = 'none'; // Hide canvas
     document.body.appendChild(canvas);
 
     ctx = canvas.getContext('2d');
 
     function draw() {
-        if (video.paused || video.ended) return requestAnimationFrame(draw);
+        if (!video || video.paused || video.ended) {
+            requestAnimationFrame(draw);
+            return;
+        }
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
         if (subtitleElement && subtitleElement.innerText.trim()) {
+            const text = subtitleElement.innerText.trim();
             ctx.font = "30px Arial";
-            ctx.textAlign = "center";
             ctx.fillStyle = "white";
+            ctx.textAlign = "center";
             ctx.strokeStyle = "black";
             ctx.lineWidth = 4;
-            const text = subtitleElement.innerText.trim();
             ctx.strokeText(text, canvas.width / 2, canvas.height - 60);
             ctx.fillText(text, canvas.width / 2, canvas.height - 60);
         }
@@ -58,9 +60,9 @@ async function startCaptionedPiP() {
 
     draw();
 
-    // Observe the subtitles for dynamic changes
+    // Observe subtitle changes
     observer = new MutationObserver(() => {
-        // Nothing specific to do, because we re-read subtitleElement.innerText in every draw()
+        // No specific action needed, canvas updates every frame
     });
 
     observer.observe(subtitleElement, {
@@ -69,21 +71,72 @@ async function startCaptionedPiP() {
         subtree: true
     });
 
-    // Start PiP on canvas
+    // Start PiP
     try {
         if ('requestPictureInPicture' in canvas) {
             await canvas.requestPictureInPicture();
+            console.log('Entered Picture-in-Picture mode with canvas!');
         } else {
-            alert('Canvas Picture-in-Picture not supported!');
+            alert('Picture-in-Picture not supported for canvas.');
         }
     } catch (e) {
-        console.error('Failed to start PiP:', e);
+        console.error('Error starting PiP:', e);
     }
 }
 
-// Listen for messages from background when user clicks the icon
+function listenForFullscreenAndCapture() {
+    if (fullscreenListenerActive) {
+        console.log('Already listening for fullscreen changes.');
+        return;
+    }
+
+    fullscreenListenerActive = true;
+
+    document.addEventListener('fullscreenchange', async () => {
+        console.log('Fullscreen change detected.');
+
+        const fsElement = document.fullscreenElement;
+
+        if (!fsElement) {
+            console.log('Exited fullscreen.');
+            return;
+        }
+
+        console.log('Fullscreen element is:', fsElement);
+
+        if (fsElement.tagName === 'IFRAME') {
+            try {
+                const iframeDoc = fsElement.contentDocument || fsElement.contentWindow.document;
+                const videoInsideIframe = iframeDoc.querySelector('video');
+
+                if (videoInsideIframe) {
+                    console.log('Video found inside fullscreened iframe!');
+                    startCaptionedPiPFromVideo(videoInsideIframe);
+                } else {
+                    console.warn('No video found inside fullscreened iframe.');
+                    alert('Fullscreen iframe detected, but no video found inside.');
+                }
+            } catch (e) {
+                console.error('Cannot access fullscreened iframe (CORS restriction).');
+                alert('Cannot access fullscreened iframe due to browser security restrictions.');
+            }
+        } else if (fsElement.tagName === 'VIDEO') {
+            console.log('Fullscreened video directly!');
+            startCaptionedPiPFromVideo(fsElement);
+        } else {
+            console.warn('Fullscreen element is neither a video nor an iframe.');
+            alert('Fullscreen element is not a video or iframe.');
+        }
+    });
+
+    console.log('Started listening for fullscreen changes.');
+}
+
+// When extension button is clicked
 browser.runtime.onMessage.addListener((message) => {
     if (message.action === 'start_captioned_pip') {
-        startCaptionedPiP();
+        console.log('Extension clicked, starting fullscreen listener.');
+        listenForFullscreenAndCapture();
+        alert('Now listening for fullscreen. Please fullscreen your video player.');
     }
 });
