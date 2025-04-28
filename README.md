@@ -47,12 +47,14 @@ Installation (Temporary Testing)
 
 File Structure
 
-```firefox-captioned-pip/
+```
+firefox-captioned-pip/
 ├── manifest.json   # Firefox extension configuration
 ├── content.js      # Handles video/caption capture and canvas drawing
 ├── background.js   # Handles user click and messaging
 ├── icon.png        # Extension icon (48x48px)
-└── README.md       # Project documentation```
+└── README.md       # Project documentation
+```
 Planned Improvements
 
     Better font styling and outline effects for the subtitles
